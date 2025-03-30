@@ -38,3 +38,6 @@ DEFAULT_PAGINATION = 6
 
 # articles on page per type. None = default
 PAGINATED_TEMPLATES = {'index': 0, 'tag': None, 'category': None, 'author': None}
+
+
+STATIC_PATHS = ['images', 'pdfs']

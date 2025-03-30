@@ -207,4 +207,11 @@ Invalidate the Cloudfront cache:
 
 .. code-block:: bash
 
-    aws cloudfront create-invalidation --distribution-id <DISTRIBUTIONID> --paths "/*"
+    aws cloudfront create-invalidation \
+        --distribution-id <DISTRIBUTIONID> \
+        --paths "/*"
+
+
+NOTE: There is a glaring security problem with this implementation. Can you
+guess what it is? See my next post for details.
+
