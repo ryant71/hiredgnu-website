@@ -1,0 +1,3 @@
+[submodule "themes/pelican-simplegrey"]
+	path = themes/pelican-simplegrey
+	url = git@github.com:ryant71/pelican-simplegrey.git

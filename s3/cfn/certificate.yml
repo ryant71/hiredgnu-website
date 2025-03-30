@@ -1,0 +1,25 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  DomainName:
+    Type: String
+    Description: The domain name for the website (e.g., example.com)
+    Default: hiredgnu.net 
+
+Resources:
+  Certificate:
+    Type: 'AWS::CertificateManager::Certificate'
+    Properties:
+      DomainName: !Ref DomainName
+      SubjectAlternativeNames:
+        - !Sub "*.${DomainName}"
+      DomainValidationOptions:
+        - DomainName: !Ref DomainName
+          #HostedZoneId: Z2FDTNDATAQYW2 # CloudFront hosted zone ID (not here)
+          HostedZoneId: Z2B00DRLLVN6P9
+      ValidationMethod: DNS
+
+Outputs:
+  CertificateArn:
+    Description: Issued SSL certificate Arn
+    Value: !Ref Certificate

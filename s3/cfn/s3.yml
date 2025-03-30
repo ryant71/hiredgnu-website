@@ -1,0 +1,124 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  DomainName:
+    Type: String
+    Description: The domain name for the website (e.g., example.com)
+    Default: hiredgnu.net 
+
+  FQDN:
+    Type: String
+    Description: The fqdn name for the website (e.g., blog.example.com)
+    Default: hiredgnu.net 
+
+  CertificateArn:
+    Type: String
+    Default: arn:aws:acm:us-east-1:487196000447:certificate/814f0290-d49e-4bbf-a582-382a90e3ef37
+    Description: The ARN of the ACM certificate created in us-east-1
+
+Resources:
+  S3Bucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Ref FQDN
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: error.html
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+
+  BucketPolicy:
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      PolicyDocument:
+        Id: MyPolicy
+        Version: 2012-10-17
+        Statement:
+          - Sid: PublicReadForGetBucketObjects
+            Effect: Allow
+            Principal: '*'
+            Action: 's3:GetObject'
+            Resource: !Sub "arn:aws:s3:::${S3Bucket}/*"
+      Bucket: !Ref S3Bucket
+
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Aliases:
+          - !Ref FQDN
+        Origins:
+          - Id: S3Origin
+            DomainName: !Sub "${FQDN}.s3-website-eu-west-1.amazonaws.com"
+            CustomOriginConfig:
+              HTTPPort: 80
+              HTTPSPort: 80
+              OriginProtocolPolicy: http-only
+        Enabled: true
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - GET
+            - HEAD
+          CachedMethods:
+            - GET
+            - HEAD
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: none
+        ViewerCertificate:
+          AcmCertificateArn: !Ref CertificateArn
+          SslSupportMethod: sni-only
+        DefaultRootObject: index.html
+        PriceClass: PriceClass_100
+
+  DNSRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneName: !Sub "${DomainName}."
+      Name: !Ref FQDN 
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt CloudFrontDistribution.DomainName
+        HostedZoneId: Z2FDTNDATAQYW2 # CloudFront hosted zone ID
+
+Outputs:
+  S3BucketWebsiteURL:
+    Description: URL for website hosted on S3
+    Value: !GetAtt S3Bucket.WebsiteURL
+
+  S3BucketRegionalDomainName:
+    Description: Regional domain name for bucket
+    Value: !GetAtt S3Bucket.RegionalDomainName 
+
+  CertificateArn:
+    Description: Certificate deployed in us-east-1
+    Value: !Ref CertificateArn
+
+  CloudFrontDistributionDomainName:
+    Description: CloudFront Distribution Domain Name
+    Value: !GetAtt CloudFrontDistribution.DomainName
+
+  CloudFrontDistributionId:
+    Description: CloudFront Distribution ID
+    Value: !Ref CloudFrontDistribution
+
+  S3BucketName:
+    Description: S3 Bucket Name
+    Value: !Ref S3Bucket
+
+#   S3BucketSecureURL:
+#     Value: !Join 
+#       - ''
+#       - - 'https://'
+#         - !GetAtt 
+#           - S3Bucket
+#           - DomainName
+#     Description: Name of S3 bucket to hold website content
