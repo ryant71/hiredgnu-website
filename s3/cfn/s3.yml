@@ -15,11 +15,82 @@ Parameters:
     Type: String
     Description: The ARN of the ACM certificate created in us-east-1
 
+  BucketName:
+    Type: String
+    Description: The name of the S3 Bucket
+
+
 Resources:
+
+  WebACL:
+    Type: AWS::WAFv2::WebACL
+    Properties:
+      Name: RateLimitWebACL
+      Scope: CLOUDFRONT
+      DefaultAction:
+        Allow: {}
+      VisibilityConfig:
+        SampledRequestsEnabled: true
+        CloudWatchMetricsEnabled: true
+        MetricName: RateLimitWebACL
+      Rules:
+        - Name: RateLimitRule
+          Priority: 0
+          Action:
+            Block: {}
+          Statement:
+            RateBasedStatement:
+              Limit: 2000 # requests per 5-minute period
+              AggregateKeyType: IP
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: RateLimitRule
+
+  CloudFrontOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub "${FQDN}-OAC"
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        WebACLId: !GetAtt WebACL.Arn
+        Aliases:
+          - !Ref FQDN
+        Origins:
+          - Id: S3Origin
+            DomainName: !GetAtt S3Bucket.RegionalDomainName
+            S3OriginConfig: {}
+            OriginAccessControlId: !Ref CloudFrontOAC
+        Enabled: true
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - GET
+            - HEAD
+          CachedMethods:
+            - GET
+            - HEAD
+          Compress: true
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # CachingOptimised
+          OriginRequestPolicyId: 88a5eaf4-2fd4-4709-b370-b4c650ea3fcf # None (no headers/cookies/query strings)
+        ViewerCertificate:
+          AcmCertificateArn: !Ref CertificateArn
+          SslSupportMethod: sni-only
+        DefaultRootObject: index.html
+        PriceClass: PriceClass_100
+
   S3Bucket:
     Type: 'AWS::S3::Bucket'
     Properties:
-      BucketName: !Ref FQDN
+      BucketName: !Ref BucketName
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
@@ -46,45 +117,6 @@ Resources:
             Condition:
               StringEquals:
                 AWS:SourceArn: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}"
-
-  CloudFrontOAC:
-    Type: AWS::CloudFront::OriginAccessControl
-    Properties:
-      OriginAccessControlConfig:
-        Name: !Sub "${FQDN}-OAC"
-        OriginAccessControlOriginType: s3
-        SigningBehavior: always
-        SigningProtocol: sigv4
-
-  CloudFrontDistribution:
-    Type: AWS::CloudFront::Distribution
-    Properties:
-      DistributionConfig:
-        Aliases:
-          - !Ref FQDN
-        Origins:
-          - Id: S3Origin
-            DomainName: !GetAtt S3Bucket.RegionalDomainName
-            S3OriginConfig: {}
-            OriginAccessControlId: !Ref CloudFrontOAC
-        Enabled: true
-        DefaultCacheBehavior:
-          TargetOriginId: S3Origin
-          ViewerProtocolPolicy: redirect-to-https
-          AllowedMethods:
-            - GET
-            - HEAD
-          CachedMethods:
-            - GET
-            - HEAD
-          Compress: true
-          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # CachingOptimised
-          OriginRequestPolicyId: 88a5eaf4-2fd4-4709-b370-b4c650ea3fcf # None (no headers/cookies/query strings)
-        ViewerCertificate:
-          AcmCertificateArn: !Ref CertificateArn
-          SslSupportMethod: sni-only
-        DefaultRootObject: index.html
-        PriceClass: PriceClass_100
 
   DNSRecord:
     Type: AWS::Route53::RecordSet

@@ -8,7 +8,7 @@ OUTPUTDIR=$(BASEDIR)/output
 CONFFILE=$(BASEDIR)/pelicanconf.py
 PUBLISHCONF=$(BASEDIR)/publishconf.py
 
-S3_BUCKET=hiredgnu.net
+S3_BUCKET=hiredgnu-web-assets-oqu3xei5i
 
 
 DEBUG ?= 0
@@ -72,7 +72,8 @@ publish:
 	"$(PELICAN)" "$(INPUTDIR)" -o "$(OUTPUTDIR)" -s "$(PUBLISHCONF)" $(PELICANOPTS)
 
 s3_upload: publish
+	find output -name '*.html' -exec html-minifier-terser --collapse-whitespace --remove-comments --minify-css true --minify-js true -o {} {} \;
 	aws s3 sync "$(OUTPUTDIR)"/ s3://$(S3_BUCKET)/ --delete
-	aws cloudfront create-invalidation --distribution-id E1DT1AJR4F1N8F --paths "/*"
+	aws cloudfront create-invalidation --distribution-id E2XDMBSL2Y8HX2 --paths "/*"
 
 .PHONY: html help clean regenerate serve serve-global devserver devserver-global publish s3_upload

@@ -11,8 +11,8 @@ from pelicanconf import *
 SITEURL = "https://hiredgnu.net"
 RELATIVE_URLS = False
 
-FEED_ALL_ATOM = "feeds/all.atom.xml"
-CATEGORY_FEED_ATOM = "feeds/{slug}.atom.xml"
+FEED_ALL_ATOM = None
+CATEGORY_FEED_ATOM = None
 
 DELETE_OUTPUT_DIRECTORY = True
 
