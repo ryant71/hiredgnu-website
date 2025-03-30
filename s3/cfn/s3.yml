@@ -13,7 +13,6 @@ Parameters:
 
   CertificateArn:
     Type: String
-    Default: arn:aws:acm:us-east-1:487196000447:certificate/814f0290-d49e-4bbf-a582-382a90e3ef37
     Description: The ARN of the ACM certificate created in us-east-1
 
 Resources:
@@ -22,10 +21,10 @@ Resources:
     Properties:
       BucketName: !Ref FQDN
       PublicAccessBlockConfiguration:
-        BlockPublicAcls: false
-        BlockPublicPolicy: false
-        IgnorePublicAcls: false
-        RestrictPublicBuckets: false
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
       WebsiteConfiguration:
         IndexDocument: index.html
         ErrorDocument: error.html
@@ -35,16 +34,27 @@ Resources:
   BucketPolicy:
     Type: 'AWS::S3::BucketPolicy'
     Properties:
+      Bucket: !Ref S3Bucket
       PolicyDocument:
-        Id: MyPolicy
         Version: 2012-10-17
         Statement:
-          - Sid: PublicReadForGetBucketObjects
-            Effect: Allow
-            Principal: '*'
-            Action: 's3:GetObject'
+          - Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
             Resource: !Sub "arn:aws:s3:::${S3Bucket}/*"
-      Bucket: !Ref S3Bucket
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}"
+
+  CloudFrontOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub "${FQDN}-OAC"
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
 
   CloudFrontDistribution:
     Type: AWS::CloudFront::Distribution
@@ -54,11 +64,9 @@ Resources:
           - !Ref FQDN
         Origins:
           - Id: S3Origin
-            DomainName: !Sub "${FQDN}.s3-website-eu-west-1.amazonaws.com"
-            CustomOriginConfig:
-              HTTPPort: 80
-              HTTPSPort: 80
-              OriginProtocolPolicy: http-only
+            DomainName: !GetAtt S3Bucket.RegionalDomainName
+            S3OriginConfig: {}
+            OriginAccessControlId: !Ref CloudFrontOAC
         Enabled: true
         DefaultCacheBehavior:
           TargetOriginId: S3Origin
@@ -113,12 +121,3 @@ Outputs:
   S3BucketName:
     Description: S3 Bucket Name
     Value: !Ref S3Bucket
-
-#   S3BucketSecureURL:
-#     Value: !Join 
-#       - ''
-#       - - 'https://'
-#         - !GetAtt 
-#           - S3Bucket
-#           - DomainName
-#     Description: Name of S3 bucket to hold website content

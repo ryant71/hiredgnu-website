@@ -2,14 +2,11 @@ Schnippets
 ==========
 
 .. _moreutils: https://prefetch.net/blog/index.php/2016/11/09/getting-more-out-of-your-linux-servers-with-moreutils/
-.. _k8s_rbac: http://docs.heptio.com/content/tutorials/rbac.html
-__ k8s_rbac_
 
 Linux
 -----
 
 * moreutils_
-* `Kubernetes RBAC`__
 
 Python
 ------
