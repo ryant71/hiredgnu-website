@@ -8,8 +8,8 @@ OUTPUTDIR=$(BASEDIR)/output
 CONFFILE=$(BASEDIR)/pelicanconf.py
 PUBLISHCONF=$(BASEDIR)/publishconf.py
 
-S3_BUCKET=hiredgnu-web-assets-oqu3xei5i
-
+S3_BUCKET=$(shell aws s3 ls | awk '{print $$NF}' | grep -m 1 hiredgnu-web-assets)
+DISTRIBUTION_ID=$(shell aws cloudfront list-distributions --query '[DistributionList][0].Items[0].Id')
 
 DEBUG ?= 0
 ifeq ($(DEBUG), 1)
@@ -74,6 +74,6 @@ publish:
 s3_upload: publish
 	find output -name '*.html' -exec html-minifier-terser --collapse-whitespace --remove-comments --minify-css true --minify-js true -o {} {} \;
 	aws s3 sync "$(OUTPUTDIR)"/ s3://$(S3_BUCKET)/ --delete
-	aws cloudfront create-invalidation --distribution-id E2XDMBSL2Y8HX2 --paths "/*"
+	aws cloudfront create-invalidation --distribution-id $(DISTRIBUTION_ID) --paths "/*"
 
 .PHONY: html help clean regenerate serve serve-global devserver devserver-global publish s3_upload

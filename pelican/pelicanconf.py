@@ -41,3 +41,7 @@ PAGINATED_TEMPLATES = {'index': 0, 'tag': None, 'category': None, 'author': None
 
 
 STATIC_PATHS = ['images', 'pdfs']
+
+EXTRA_PATH_METADATA = {
+    'images/favicon.ico': {'path': 'favicon.ico'},
+}
