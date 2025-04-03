@@ -11,10 +11,6 @@ Parameters:
     Description: The fqdn name for the website (e.g., blog.example.com)
     Default: hiredgnu.net 
 
-  CertificateArn:
-    Type: String
-    Description: The ARN of the ACM certificate created in us-east-1
-
   BucketName:
     Type: String
     Description: The name of the S3 Bucket
@@ -82,7 +78,7 @@ Resources:
           CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # CachingOptimised
           OriginRequestPolicyId: 88a5eaf4-2fd4-4709-b370-b4c650ea3fcf # None (no headers/cookies/query strings)
         ViewerCertificate:
-          AcmCertificateArn: !Ref CertificateArn
+          AcmCertificateArn: !ImportValue CertificateArn
           SslSupportMethod: sni-only
         DefaultRootObject: index.html
         PriceClass: PriceClass_100
@@ -136,10 +132,6 @@ Outputs:
   S3BucketRegionalDomainName:
     Description: Regional domain name for bucket
     Value: !GetAtt S3Bucket.RegionalDomainName 
-
-  CertificateArn:
-    Description: Certificate deployed in us-east-1
-    Value: !Ref CertificateArn
 
   CloudFrontDistributionDomainName:
     Description: CloudFront Distribution Domain Name
