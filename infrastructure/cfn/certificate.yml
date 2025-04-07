@@ -26,3 +26,5 @@ Outputs:
   CertificateArn:
     Description: Issued SSL certificate Arn
     Value: !Ref Certificate
+    Export:
+      Name: CertificateArn
