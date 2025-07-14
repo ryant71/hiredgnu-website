@@ -17,10 +17,13 @@ AUTHOR_FEED_RSS = None
 
 # Blogroll
 LINKS = (
+    ("Ryan's Substack", "https://hiredgnu.substack.com/"),
 )
 
 # Social widget
 SOCIAL = (
+    ("BlueSky UA View", "https://bsky.app/profile/bsky.one/feed/ukrainian-view"),
+    ("BlueSky UA Fund Raising", "https://bsky.app/profile/dovgonosyk.bsky.social/feed/aaaapknzigxfi"),
 )
 
 
